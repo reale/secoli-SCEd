@@ -6425,7 +6425,7 @@ fi
 
 
 
-LIBS="-luuid -lsqlite3 -lglib-2.0 -ljansson -llua5.3.4 -lconfig -lvrb -llog4c -ldb -levent $LIBS"
+LIBS="-luuid -lsqlite3 -lglib-2.0 -ljansson -llua-5.3 -lconfig -lvrb -llog4c -ldb-5.3 -levent-2.1 $LIBS"
 CFLAGS="-I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/lib/i386-linux-gnu/glib-2.0/include -I/usr/include/lua5.3 $CFLAGS -ggdb"
 
 ac_config_files="$ac_config_files Makefile src/Makefile scripts/Makefile scripts/init-SCEd.LSB"

@@ -1,0 +1,182 @@
+#!/usr/bin/expect
+
+#
+# SCEd Janitor
+#
+#   Takes care and keeps track of a herd of SCEd servers.
+#
+
+
+set server_path "/usr/local/sbin/SCEd"
+set port_list_path "/var/run/SCEd.ports"
+set user "Manager"
+set password "test"
+set return_value 0
+set timeout 2
+
+set __lock_port 5155
+
+# suppress output from spawned commands
+log_user 0
+
+
+proc date {} {
+	set now [clock seconds]
+	return [clock format $now]
+}
+
+proc log {msg} {
+	puts "[date]: SCEd Janitor: $msg"
+}
+
+# a nice implementation of locks using sockets (http://wiki.tcl.tk/593)
+proc acquire_lock {} {
+	global __lock_socket
+	global __lock_port
+
+	if { [catch {socket -server dummy_accept $__lock_port} SOCKET] } {
+		return 1
+	}
+
+	set __lock_socket $SOCKET
+
+	return 0
+}
+
+proc poke_server {port} {
+	spawn telnet localhost $port
+	expect "*\r"
+	send "HELLO\r"
+	expect "*SCE GATEWAY*" { return 0 }
+	return 1
+}
+
+proc get_server_pid {port} {
+	set pid ""
+	catch { set pid [exec lsof -i TCP:$port -F p] }
+	set pid [regsub "\[^0-9\]" $pid ""]
+
+	return $pid
+}
+
+proc start_server {port} {
+	global server_path
+
+	return [catch { exec $server_path -p $port >>& /dev/null }]
+}
+
+proc stop_server {port pid} {
+	global user
+	global password
+
+	spawn telnet localhost $port
+	expect "*\r"
+	send "AUTHENTICATE USER $user WITH PASSWORD $password\r"
+	expect "*OK*"
+	send "SHUTDOWN IMMEDIATE\r"
+	expect
+	sleep 1
+	catch { exec kill $pid }
+	sleep 1
+	catch { exec kill -9 $pid }
+}
+
+proc restart_server {port pid} {
+	stop_server $port $pid
+	sleep 1
+	return [start_server $port]
+}
+
+
+
+if { [acquire_lock] != 0 } {
+	log "ERROR: Cannot acquire lock.  Exiting."
+	exit 3
+}
+
+if { $argc == 0 } {
+	log "No user-provided port list.  Trying to read from $port_list_path."
+
+	# try to read port list from conf file
+	if [catch { set fp [open $port_list_path r] }] {
+		log "ERROR: Cannot open file $port_list_path for reading."
+		exit 1
+	}
+
+	set file_data [read $fp]
+	close $fp
+
+	set data [split $file_data]
+	foreach elem $data {
+		if { $elem ne "" } {
+			log "Read port: $elem."
+			set argv [concat $argv $elem]
+			incr argc
+		}
+	}
+
+	if { $argc == 0 } {
+		log "File $port_list_path is empty.  Nothing to be done."
+		exit 0
+	}
+}
+
+
+foreach arg $argv {
+
+	if { [scan $arg "%d" port] != 1 } {
+		log "ERROR: Invalid port format: $arg."
+		exit 1
+	}
+
+	if { $port < 0 } {
+		set port [expr -1*$port]
+		log "Shutting down SCEd server on port $port."
+		set action "shutdown"
+	} else {
+		log "Checking SCEd server on port $port."
+		set action "check"
+	}
+
+	set pid [get_server_pid $port]
+
+	if { $pid eq "" } {
+
+		if { $action eq "check" } {
+			log "There seems to be no SCEd server running on port $port.  Will try to fire up one."
+			if { [start_server $port] == 0 } {
+				log "SCEd server successfully started on port $port."
+			} else {
+				log "ERROR: SCEd server refused to start on port $port."
+				set return_value 2
+			}
+
+		} elseif { $action eq "shutdown" } {
+			log "There seems to be no SCEd server running on port $port.  That's good."
+		}
+
+	} elseif { [poke_server $port] == 0 } {
+
+		if { $action eq "check" } {
+			log "A SCEd server is up and running on port $port \[pid $pid\].  That's good."
+
+		} elseif { $action eq "shutdown" } {
+			log "A SCEd server is up and running on port $port \[pid $pid\].  Shutting down."
+			stop_server $port $pid
+		}
+
+	} else {
+
+		if { $action eq "check" } {
+			log "SCEd server on port $port seems to be hung up \[pid $pid\].  Restarting."
+			restart_server $port $pid
+
+		} elseif { $action eq "shutdown" } {
+			log "SCEd server on port $port seems to be hung up \[pid $pid\].  Stopping."
+			stop_server $port $pid
+		}
+	}
+}
+
+log "Exiting..."
+exit $return_value

@@ -1,0 +1,122 @@
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:          SCE
+# Required-Start:    $syslog $local_fs $network $remote_fs
+# Required-Stop:     $syslog $local_fs $network $remote_fs
+# Should-Start:      udev
+# Default-Start:     2 3 4 5
+# Default-Stop:      S 0 1 6
+# Short-Description: SCE gateway
+# Description:       LSB init script for SCEd, a gateway for accessing the SCE repository
+### END INIT INFO
+
+
+# local variables
+prefix=/usr/local
+exec_prefix=${prefix}
+bindir=${exec_prefix}/bin
+sbindir=${exec_prefix}/sbin
+etc=/etc
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+NAME=SCEd
+DAEMON=${sbindir}/${NAME}
+JANITOR=${sbindir}/${NAME}.janitor
+DESC="SCE gateway"
+DEFAULTS=${etc}/default/$NAME
+PORT_LIST_PATH=/var/run/SCEd.ports
+
+
+# Source defaults file; edit that file to configure this script.
+if [ -e "${DEFAULTS}" ]; then
+  . "${DEFAULTS}"
+fi
+
+# installation check
+test -x $DAEMON || exit 5
+
+# load LSB 3.x init functions
+. /lib/lsb/init-functions
+
+
+
+debug()
+{
+	local msg="$@"
+	if [ "${DEBUG}" = "yes" ]; then
+	    echo "[DEBUG] $msg"
+	fi
+}
+
+start_daemon()
+{
+	# write down port list
+	echo $PORT_LIST > $PORT_LIST_PATH
+
+	# start SCE janitor and capture its output
+	janitor_output=$($JANITOR)
+	res=$?
+
+	debug "$janitor_output"
+
+	return $res
+}
+
+stop_daemon()
+{
+	# read port list
+	local port_list=
+	for port in $(cat $PORT_LIST_PATH | xargs -n 1 echo | bc 2>/dev/null)
+	do
+		debug "read port $port"
+		[ -n "$port" ] || continue
+		port=$(echo "if ($port > 0) { print -1*$port }" | bc)
+		[ -n "$port" ] || continue
+		port_list="$port_list $port"
+	done
+
+	debug "port_list = $port_list"
+
+	# erase port list
+	cat /dev/null > $PORT_LIST_PATH
+
+	[ -n "$port_list" ] || return 0
+
+	janitor_output=$($JANITOR $port_list)
+	res=$?
+
+	debug "$janitor_output"
+
+	return $res
+}
+
+
+
+case "$1" in
+  start)
+	# If we're not to start the daemon, simply exit
+	if [ "${START}" != "yes" ]; then
+	    exit 0
+	fi
+	log_daemon_msg "Starting $DESC"
+	start_daemon
+	log_end_msg $?
+	;;
+  stop)
+	log_daemon_msg "Stopping $DESC"
+	stop_daemon
+	log_end_msg $?
+	;;
+  restart|reload|force-reload)
+	$0 stop
+	sleep 1
+	$0 start
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart|reload|force-reload}" >&2
+	exit 2
+	;;
+esac
+
+exit 0

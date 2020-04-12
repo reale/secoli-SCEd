@@ -1,0 +1,12 @@
+#!/bin/bash
+
+rm -f mth.tar.bz2
+
+for f in $(ls -X mth.*)
+do
+    echo "Adding $f"
+    cat $f >> mth.tar.bz2
+done
+
+echo "Extracting..."
+tar xjf mth.tar.bz2

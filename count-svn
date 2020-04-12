@@ -1,0 +1,27 @@
+#!/bin/sh
+
+tmpfile1=/tmp/$$_1
+tmpfile2=/tmp/$$_2
+cat /dev/null > $tmpfile1
+cat /dev/null > $tmpfile2
+trap "rm -f $tmpfile1 $tmpfile2" EXIT INT KILL
+
+
+find src -type f -name '*.c' -o -name '*.h' -o -name '*.cc' | while read file
+do
+	svn info $file > /dev/null 2>&1
+	[ $? -eq 0 ] && cat $file >> $tmpfile1
+
+	cat $file >> $tmpfile2
+done
+
+add_count=$(cat $tmpfile1 | wc -l)
+total_count=$(cat $tmpfile2 | wc -l)
+percentage=$(echo "scale = 2; 100 * $add_count / $total_count" | bc)
+
+
+
+echo "Code imported into Subversion"
+echo "-----------------------------"
+echo -e "Percentage\t\t$percentage"
+echo -e "Total\t\t\t$total_count"

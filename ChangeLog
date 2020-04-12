@@ -1,0 +1,70 @@
+0.3.1:
+
+	Si implementa un supporto minimale per la comunicazione tra istanze.
+
+0.3.0:
+
+	Rimosso supporto per libpaxos.
+
+0.2.0:
+
+	Integrata libreria libpaxos.
+
+0.1.12:
+
+	Si implementa una distinzione tra le sedi di (secondo) accreditamento e
+	le sedi localizzate.
+
+0.1.11:
+
+	Si modifica la semantica del parametro di ricerca BY SCE_CODE, di cui
+	si mette inoltre a disposizione un sinonimo (BY LOCATION_CODE).
+
+0.1.10:
+
+	Si implementa la ricerca dei codici postali associati alla località data.
+
+0.1.9:
+
+	Corretta gestione dei codici postali del Canada.
+
+0.1.8:
+
+	Aggiunto nuovo parametro SPECIMINA OF ZIPCODES ai comandi FETCH e GET,
+	il quale restituisce un elenco di codici postali rappresentativi, uno
+	per nazione.
+
+0.1.7:
+
+	Si implementa una gestione speciale per i codici postali del Regno
+	Unito (sfruttando anche le speciali tabelle partizionate offerte dalla
+	base dati SCE).
+
+0.1.6:
+
+	Reso disponibile il metodo exit_program().  Aggiunto comando SHUTDOWN,
+	per lo spegnimento programmato.
+	SCEd Janitor: riscrittura completa in Expect.
+	Creato script di start e stop del servizio.
+
+0.1.5:
+
+	Aggiunta opzione SERVER_IDENTITY (identificativo univoco di istanza,
+	utile in una configurazione ad istanze multiple).
+
+0.1.4:
+
+	Aggiunta opzione CLIENT_IDENTITY (equivalente al comando WHO).
+	Migliorata gestione dei timeout impostabili dal client.
+	Migliorato output del comando LIST OPTIONS, con possibilita' di
+	distinguere tra opzioni globali ed opzioni di sessione.
+	Implementate restrizioni di accesso (lettura/scrittura) sulle opzioni.
+	Agli utenti autenticati e' permesso prolungare a piacimento il timeout
+	o disattivarlo.
+
+0.1.3:
+
+	Migliorato supporto per utenticazione/deautenticazione utente, in vista
+	dell'implementazione di messaggistica distribuita tra istanze.
+	Migliorato output del comando SHOW MEMORY_CONSUMPTION per utenti autenticati.
+	Corretto passaggio di un argomento al metodo user_destroy().

@@ -1,0 +1,9 @@
+# defaults file for the SCE gateway
+################################################################################
+
+
+# list of ports to bind SCEd instances to
+PORT_LIST="5006 5007"
+
+# should we start?
+START=yes

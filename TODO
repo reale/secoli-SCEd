@@ -1,0 +1,10 @@
+validazione opzioni
+possibilita di combinare opzioni con operatori relazionali
+gestione unicode/utf-8
+descrizione formale protocollo
+implementare comando SHOW
+query piu' perfezionate (nome, sinonimo, etc.)
+riutilizzare i prepared statements
+regexp pluggabili, etc.;  supporto lua
+SCE Gateway: Importato modulo XXX.
+http://users.ece.cmu.edu/~eno/coding/CCodingStandard.html

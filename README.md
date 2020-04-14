@@ -4,6 +4,8 @@ Consular Data daemon for the [Fast It Project](https://serviziconsolari.esteri.i
 
 I was involved in the project in the years 2013-14.
 
+In order to connect to the daemon please use the script `SCEd-client`.
+
 ## Install
 
 In CentOS 8, just install the prerequisites
